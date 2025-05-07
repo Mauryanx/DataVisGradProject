@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAYSTAC Dashboard: Visualizing Noisy GPS Trajectories</title>
+  <link rel="stylesheet" type="text/css" href="./inspector.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@300;400&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      /* Color theme - blues and teals for data integrity */
+      --bg-color: #f7f9fc;
+      --card-bg: #ffffff;
+      --card-bg-alt: #f8fcff;
+      --primary-color: #2a6592;
+      --secondary-color: #3a8fb7;
+      --accent-color: #64b6ac;
+      --text-primary: #2c3e50;
+      --text-secondary: #546778;
+      --text-tertiary: #7f8c8d;
+      --shadow-color: rgba(53, 106, 160, 0.1);
+      --border-color: rgba(53, 106, 160, 0.12);
+      --success-color: #2ecc71;
+      --error-color: #e74c3c;
+      
+      /* Layout measurements */
+      --border-radius: 16px;
+      --padding-sm: 16px;
+      --padding-md: 24px;
+      --padding-lg: 32px;
+      --margin-sm: 16px;
+      --margin-md: 24px;
+      --margin-lg: 40px;
+      --border-width: 4px;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    /* Logo and header styling */
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: var(--margin-sm);
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background-color: var(--primary-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.3rem;
+    }
+    
+    header {
+      position: sticky;
+      top: 0;
+      background-color: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: var(--padding-md) var(--padding-lg);
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+    
+    header h1 {
+      font-size: 2.3rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      letter-spacing: -0.5px;
+    }
+    
+    header .subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+      margin-top: 4px;
+    }
+    
+    .haysac {
+      color: var(--accent-color);
+      font-weight: 700;
+    }
+    
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--padding-lg);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--margin-lg);
+    }
+    
+    /* Agent selector card styling */
+    .controls-container {
+      margin-bottom: var(--margin-md);
+    }
+    
+    .agent-selector {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 6px 24px var(--shadow-color);
+      padding: var(--padding-md);
+      border-left: var(--border-width) solid var(--secondary-color);
+      max-width: 350px;
+    }
+    
+    .selector-header {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--margin-sm);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .selector-header i {
+      color: var(--secondary-color);
+    }
+    
+    .custom-select {
+      position: relative;
+      width: 100%;
+    }
+    
+    .select-wrapper {
+      position: relative;
+    }
+    
+    .custom-select select {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: white;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .custom-select select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(100, 182, 172, 0.2);
+    }
+    
+    .select-wrapper::after {
+      content: "\f107";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--secondary-color);
+      pointer-events: none;
+    }
+    
+    .agent-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+    }
+    
+    .status-icon-success {
+      color: var(--success-color);
+    }
+    
+    .status-icon-error {
+      color: var(--error-color);
+    }
+    
+    .selector-note {
+      margin-top: var(--margin-sm);
+      font-size: 0.85rem;
+      color: var(--text-tertiary);
+      background-color: rgba(53, 106, 160, 0.05);
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid var(--secondary-color);
+    }
+    
+    .selector-note i {
+      color: var(--secondary-color);
+      margin-right: 6px;
+    }
+    
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 6px 24px var(--shadow-color);
+      overflow: hidden;
+      border-left: var(--border-width) solid var(--primary-color);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px var(--shadow-color);
+    }
+    
+    /* Different accent colors for each card */
+    #dashboard-card {
+      border-left-color: var(--primary-color);
+    }
+    
+    #stats-card {
+      border-left-color: var(--accent-color);
+      background-color: var(--card-bg-alt);
+    }
+    
+    .card-header {
+      padding: var(--padding-md) var(--padding-md) 0 var(--padding-md);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      color: var(--primary-color);
+    }
+    
+    #dashboard-card .card-icon {
+      color: var(--primary-color);
+    }
+    
+    #stats-card .card-icon {
+      color: var(--accent-color);
+    }
+    
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    
+    .card-subtitle {
+      font-size: 0.95rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      font-family: 'Merriweather', serif;
+      padding-left: 44px; /* Aligns with title after icon */
+      line-height: 1.5;
+    }
+    
+    .card-content {
+      padding: var(--padding-md);
+      display: flex;
+      justify-content: center;
+    }
+    
+    footer {
+      text-align: center;
+      padding: var(--padding-md);
+      color: var(--text-tertiary);
+      font-size: 0.9rem;
+      margin-top: var(--margin-md);
+      border-top: 1px solid var(--border-color);
+    }
+    
+    /* Fix for Observable output containers */
+    #dashboard-container, #stats-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    
+    /* Special handling for Leaflet map */
+    .leaflet-container {
+      height: 500px !important;
+      width: 100% !important;
+      max-width: none !important;
+      z-index: 1;
+      border-radius: calc(var(--border-radius) - 4px);
+      margin-top: var(--margin-sm);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Make the container layout work with notebook */
+    #dashboard-container > div,
+    #stats-container > div {
+      display: flex !important;
+      flex-direction: column !important;
+      width: 100% !important;
+      align-items: center;
+    }
+    
+    /* Override any problematic styles that might break layout */
+    .observablehq {
+      width: 100% !important;
+      display: flex;
+      justify-content: center;
+    }
+    
+    /* Make SVG elements responsive and centered */
+    svg {
+      max-width: 90%;
+      height: auto;
+      margin: 0 auto;
+      display: block;
+    }
+    
+    /* Typography improvements for visualization labels */
+    text {
+      font-family: 'Merriweather', serif !important;
+    }
+    
+    text[font-size="16px"],
+    text[font-weight="bold"] {
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 600 !important;
+    }
+    
+    /* Hide raw data display */
+    .observablehq-inspect {
+      display: none !important;
+    }
+    
+    /* Hide any pre tags containing JSON data */
+    pre:has(code:contains("{")) {
+      display: none !important;
+    }
+    
+    /* Hide elements with raw data */
+    .observablehq:has(span.observablehq--inspect) {
+      display: none !important;
+    }
+    
+    /* Hide specific data output */
+    .observablehq span[style*="color:#949494"] {
+      display: none !important; 
+    }
+    
+    /* Hide object displays */
+    .observablehq--expanded {
+      display: none !important;
+    }
+    
+    /* Media queries for responsiveness */
+    @media (min-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        gap: var(--margin-lg);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      :root {
+        --padding-sm: 12px;
+        --padding-md: 16px; 
+        --padding-lg: 24px;
+        --margin-sm: 12px;
+        --margin-md: 16px;
+        --margin-lg: 24px;
+      }
+      
+      header h1 {
+        font-size: 1.8rem;
+      }
+      
+      header .subtitle {
+        font-size: 1rem;
+      }
+      
+      .card-title {
+        font-size: 1.2rem;
+      }
+      
+      .card-subtitle {
+        font-size: 0.9rem;
+      }
+      
+      svg {
+        max-width: 100%;
+      }
+      
+      .agent-selector {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-satellite"></i></div>
+      <div>
+        <h1><span class="haysac">HAYSTAC</span> Dashboard</h1>
+        <div class="subtitle">Visualizing Noisy GPS Trajectories</div>
+      </div>
+    </div>
+  </header>
+  
+  <main id="app-container">
+    <!-- Agent selector -->
+    <div class="controls-container">
+      <div class="agent-selector">
+        <div class="selector-header">
+          <i class="fas fa-user-shield"></i> Select Agent
+        </div>
+        <div class="custom-select">
+          <div class="select-wrapper">
+            <select id="agent-dropdown">
+              <option value="agent1">Agent 1 <span class="agent-status"><i class="fas fa-check-circle status-icon-success"></i></span></option>
+              <option value="agent2">Agent 2 <span class="agent-status"><i class="fas fa-times-circle status-icon-error"></i></span></option>
+              <option value="agent3">Agent 3 <span class="agent-status"><i class="fas fa-times-circle status-icon-error"></i></span></option>
+              <option value="agent4">Agent 4 <span class="agent-status"><i class="fas fa-times-circle status-icon-error"></i></span></option>
+              <option value="agent5">Agent 5 <span class="agent-status"><i class="fas fa-times-circle status-icon-error"></i></span></option>
+            </select>
+          </div>
+        </div>
+        <div class="selector-note">
+          <i class="fas fa-info-circle"></i> Currently only Agent 1 is supported. When connected to a database, all agents will be available.
+        </div>
+      </div>
+    </div>
+    
+    <!-- First card for calendar and map -->
+    <section id="dashboard-card" class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-map-marked-alt"></i></div>
+        <div>
+          <h2 class="card-title">Interactive Missing-Interval Map</h2>
+          <p class="card-subtitle">This visualization reveals temporal patterns in data gaps. Click on any black missing gap in the calendar to automatically navigate to its geographic location on the map, allowing you to visualize gaps in their spatial context.</p>
+        </div>
+      </div>
+      <div class="card-content">
+        <div id="dashboard-container"></div>
+      </div>
+    </section>
+    
+    <!-- Second card for statistics -->
+    <section id="stats-card" class="card">
+      <div class="card-header">
+        <div class="card-icon"><i class="fas fa-chart-bar"></i></div>
+        <div>
+          <h2 class="card-title">Gap Duration Statistical Summary</h2>
+          <p class="card-subtitle">Statistical analysis of the temporal gaps</p>
+        </div>
+      </div>
+      <div class="card-content">
+        <div id="stats-container"></div>
+      </div>
+    </section>
+  </main>
+  
+  <footer>
+    <p>© 2023 Visualization Project | Created with Observable, D3.js, and Leaflet</p>
+  </footer>
+
+  <script type="module">
+    import define from "./index.js";
+    import {Runtime, Library, Inspector} from "./runtime.js";
+
+    // Go back to the simpler approach but with enhanced CSS
+    const runtime = new Runtime();
+    
+    // Create inspectors for each container
+    const dashboardContainer = document.getElementById('dashboard-container');
+    const statsContainer = document.getElementById('stats-container');
+    
+    // Hide body content until we've moved everything
+    document.body.style.visibility = 'hidden';
+    
+    // Create the module with direct inspectors
+    const main = runtime.module(define, Inspector.into(document.body));
+    
+    // After a short delay, move elements to their containers
+    setTimeout(() => {
+      const cells = document.querySelectorAll("div.observablehq");
+      
+      // First hide everything to start fresh
+      cells.forEach(cell => {
+        // Hide any raw data displays
+        const isRawData = cell.textContent.includes('Object {') || 
+                         cell.textContent.includes('Array [') ||
+                         cell.textContent.includes('duration:') ||
+                         cell.textContent.includes('gap_id:');
+                         
+        // Hide all generic text/data cells
+        if (isRawData || (!cell.querySelector("svg") && !cell.querySelector(".leaflet-container"))) {
+          cell.style.display = 'none';
+        }
+      });
+      
+      cells.forEach(cell => {
+        if (cell.style.display === 'none') return;
+        
+        // Calendar and map (first visualization)
+        if (cell.querySelector(".leaflet-container") || 
+            (cell.querySelector("svg") && cell.textContent.includes("Calendar"))) {
+          dashboardContainer.appendChild(cell);
+        }
+        // Statistics (second visualization)
+        else if (cell.querySelector("svg") && 
+                (cell.textContent.includes("duration") || cell.textContent.includes("median") ||
+                 cell.textContent.includes("Frequency"))) {
+          statsContainer.appendChild(cell);
+        }
+      });
+      
+      // Fix map display if it exists
+      const mapContainer = document.querySelector('.leaflet-container');
+      if (mapContainer && mapContainer._leaflet_map) {
+        mapContainer._leaflet_map.invalidateSize(true);
+      }
+      
+      // Apply additional styling to visualizations after they're moved
+      document.querySelectorAll('svg text').forEach(text => {
+        if (text.textContent.includes('Missing time') || 
+            text.textContent.includes('Frequency') || 
+            text.textContent.includes('Days')) {
+          text.setAttribute('font-family', 'Inter, sans-serif');
+          text.setAttribute('font-weight', '500');
+        }
+      });
+      
+      // Show the body again now that everything is in place
+      document.body.style.visibility = 'visible';
+      
+      // Handle agent dropdown styling
+      const agentDropdown = document.getElementById('agent-dropdown');
+      
+      // Add icons to the dropdown options after rendering
+      function updateDropdownText() {
+        const options = agentDropdown.options;
+        for (let i = 0; i < options.length; i++) {
+          const option = options[i];
+          const isActive = i === 0; // Only Agent 1 is active
+          
+          // Create text with icon
+          const statusIcon = isActive ? 
+            '<span class="agent-status"><i class="fas fa-check-circle status-icon-success"></i></span>' : 
+            '<span class="agent-status"><i class="fas fa-times-circle status-icon-error"></i></span>';
+          
+          // Store the raw value without HTML
+          const rawText = option.text.split('<')[0].trim();
+          option.innerHTML = rawText + ' ' + statusIcon;
+        }
+      }
+      
+      // Initial update
+      updateDropdownText();
+      
+      // Update when changed
+      agentDropdown.addEventListener('click', function() {
+        setTimeout(updateDropdownText, 10);
+      });
+      
+      // Disable other agents
+      agentDropdown.addEventListener('change', function(e) {
+        const selectedValue = e.target.value;
+        if (selectedValue !== 'agent1') {
+          alert('Only Agent 1 is currently supported.');
+          agentDropdown.value = 'agent1';
+        }
+      });
+    }, 1000);
+  </script>
+</body>
+</html>

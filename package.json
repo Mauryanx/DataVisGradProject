@@ -1,0 +1,14 @@
+{
+  "name": "959a3262708c3686",
+  "main": "959a3262708c3686@138.js",
+  "version": "138.0.0",
+  "homepage": "https://observablehq.com/d/959a3262708c3686",
+  "author": {
+    "name": "CMPS 3360/6360",
+    "url": "https://observablehq.com/@cmps-3360-6360"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@observablehq/runtime": "4 - 5"
+  }
+}
