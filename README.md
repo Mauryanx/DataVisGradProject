@@ -1,6 +1,6 @@
 # HAYSTAC Dashboard: Visualizing Noisy GPS Trajectories
 
-Welcome to the **HAYSTAC Dashboard**, an interactive web application designed to explore and analyze temporal gaps in GPS tracking data, enriched with geographic context. This dashboard was adapted from  [Observable notebook](https://observablehq.com/@cmps-3360-6360/haystac-dashboard) to provide a polished, easily shareable interface via GitHub Pages without requiring code execution.
+Welcome to the **HAYSTAC Dashboard**, an interactive web application designed to explore and analyze temporal gaps in GPS tracking data, enriched with geographic context. This dashboard was adapted from this [Observable notebook](https://observablehq.com/@cmps-3360-6360/haystac-dashboard) to provide a polished, easily shareable interface via GitHub Pages without requiring code execution.
 
 ---
 ## Report and Additional Materials
@@ -32,6 +32,7 @@ This repository contains:
 - All supporting JavaScript and CSS files (`runtime.js`, `inspector.css`, etc.)
 - Precomputed JSON data files (`agent142_calendar.json` and `agent142_gaps.json`)
 - The adapted Observable runtime and plot libraries
+- Contains code for the Calender Plot not allowed to be visualized publicly on the dashboard.
 
 ---
 
@@ -85,9 +86,9 @@ Then open `http://localhost:8000` in your browser.
 
 ## Future Work
 
-- **Full Agent Support**: Connect to a centralized database to visualize gaps for all agents.
-- **Performance Optimizations**: Batch map marker updates and simplify marker rendering for large datasets.
-- **Additional Visualizations**: Integrate time-series maps and clustering for richer spatial analysis.
+- **Live database integration**:Hooking the dashboard to a DuckDB or PostgreSQL backend (e.g. via Supabase) would allow on-demand loading of all agents, dynamic filtering by time or region, and scalable queries across millions of records.
+- **User authentication & permissions**: Embedding role-based access control would permit confidential visualizations (QGIS overlays, stay-point semantics) to be shown only to authorized researchers
+- **Anomaly annotation & feedback**: Enabling users to tag gaps or trajectories as “anomalous” and feeding those labels back into the database would support active learning for our transformer-based detection models.
 
 ---
 
