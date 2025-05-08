@@ -93,7 +93,7 @@ Then open `http://localhost:8000` in your browser.
 
 ## Acknowledgments
 
- Special thanks to the Dr.Faust , Dr.Wenk , the Observable community and the maintainers of D3.js, Observable Plot, and Leaflet.
+ Special thanks to the Dr.Faust & Dr.Wenk.
 
 ---
 
